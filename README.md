@@ -50,7 +50,7 @@ options:
   
 ### Examples:
 #### Same input and output directories
-The optional argument --output_directory is not specified:
+The optional argument `--output_directory` is not specified:
 
 ```shell
 python epub-to-azw3.py ~/ebooks
@@ -58,12 +58,12 @@ python epub-to-azw3.py ~/ebooks
 As a result, the converted books will be put in the ~/ebooks directory.
 
 #### Specific output directory
-The argument --output_directory is specified:
+The argument `--output_directory` is specified:
 
 ```shell
 python epub-to-azw3.py ~/ebooks/input --output_directory ~/ebooks/output
 ```
-As a result, the original files are read from the ~/ebooks/input directory, while the converted .azw3 files will be placed in the ~/ebooks/output directory.
+As a result, the original files are read from the `~/ebooks/input` directory, while the converted `.azw3` files will be placed in the `~/ebooks/output` directory.
 
 Sample output:
 
@@ -89,7 +89,7 @@ Sample output:
 ## Parallel Execution
 Parallel execution can be triggered in two ways:
 
-1. Explicitly using the -p or --parallel flag. 
+1. Explicitly using the `-p` or `--parallel` flag. 
 2. Automatically: if the script detects more than 10 files and the flag wasn't passed, it will prompt you in the terminal asking if you want to enable parallel conversion ([y/N]).
 
 On Unix-based systems, you can make the script executable:
