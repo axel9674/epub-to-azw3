@@ -34,11 +34,12 @@ cd epub-to-azw3
 Run the script with:
 
 ```shell
-python epub-to-azw3.py </path/to/directory> [-o, --output_directory </path/to/output/directory>] [[-p, --parallel] | [-s, --skip_parallel]]
+python epub-to-azw3.py DIR [-o, --output_directory ] [[-p, --parallel] | [-s, --skip_parallel]]
 
 positional arguments:
-  </path/to/directory>
-                                The path from which to read the input `.epub` files. If the optional arg --output_directory is not specified, then it is also used as the output directory path.
+  DIR                           The path from which to read the input `.epub` files.
+                                If the optional arg --output_directory is not specified, then
+                                it is also used as the output directory path.
   
 options:
   -h, --help                    show this help message and exit
