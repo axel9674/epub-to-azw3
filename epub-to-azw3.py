@@ -3,6 +3,7 @@
 import argparse
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 
 def get_size(path):
@@ -56,21 +57,23 @@ class EpubEbook:
         return False
 
     def convert_epub_to_azw3(self, force=False):
-        print(f"({self.idx + 1} / {self.app.count}) {blue(self.epub_path)} ({yellow(get_size(self.epub_path))})")
+        print(f"[{self.idx + 1} / {self.app.count}] {blue(self.epub_path)} ({yellow(get_size(self.epub_path))})")
         if not force and self.azw3_exists():
             # Skip conversion if AZW3 exists and is newer than EPUB
-            print(f"\tSkipping {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))}), AZW3 is up-to-date.")
+            print(f"\t[{self.idx + 1}] Skipping {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))}), AZW3 is up-to-date.")
             return
 
-        print(f"\tConverting {yellow(self.filename)} to AZW3...")
-        subprocess.run(["ebook-convert", self.epub_path, self.azw3_path], check=True)
-        print(f"\tConversion completed: {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))})")
+        print(f"\t[{self.idx + 1}] Converting {yellow(self.filename)} to AZW3...")
+        subprocess.run(["ebook-convert", self.epub_path, self.azw3_path], check=True, stdout=subprocess.DEVNULL)
+        print(f"\t[{self.idx + 1}] Conversion completed: {green(self.azw3_path)} ({yellow(get_size(self.azw3_path))})")
 
 
 class ConvertApp:
-    def __init__(self, directory, output_directory=None):
+    def __init__(self, directory, output_directory=None, parallel=False, skip_parallel=False):
         self.directory = directory
         self.output_directory = output_directory or directory
+        self.parallel = parallel
+        self.skip_parallel = skip_parallel
         self.setup_epubs()
 
     @property
@@ -91,17 +94,40 @@ class ConvertApp:
 
     def convert_epub_to_azw3(self):
         self.create_output_directory()
-        for epub in self.epubs:
-            epub.convert_epub_to_azw3()
+
+        if self.count == 0:
+            print(yellow(f"No EPUB files to convert in the {self.directory} directory."))
+            return
+
+        THRESHOLD = 1
+        if not self.parallel and self.count > THRESHOLD and not self.skip_parallel:
+            print(yellow(f"Found {self.count} EPUB files."))
+            choice = input(blue("Do you want to use parallel convertion to speed up the process? [y/N]")).strip().lower()
+            if choice in ['s', 'si', 'sì', 'y', 'yes']:
+                self.parallel = True
+
+        if self.parallel and self.count > 0:
+            max_workers = os.cpu_count() or 4
+            print(blue(f"Starting the parallel conversion using {max_workers} workers..."))
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                executor.map(lambda epub: epub.convert_epub_to_azw3(), self.epubs)
+        else:
+            for epub in self.epubs:
+                epub.convert_epub_to_azw3()
 
 
 def main():
     parser = argparse.ArgumentParser(description="Convert all EPUB files in a directory to AZW3 using Calibre's ebook-convert.")
     parser.add_argument("directory", metavar="DIR", type=str, help="Path to the directory containing EPUB files")
-    parser.add_argument("--output_directory", metavar="DIR", type=str, help="Path to the output directory", required=False, default=None)
+    parser.add_argument("-o", "--output_directory", metavar="DIR", type=str, help="Path to the output directory")
+
+    parallel_group = parser.add_mutually_exclusive_group()
+    parallel_group.add_argument("-p", "--parallel", action="store_true", help="Run conversion in parallel.")
+    parallel_group.add_argument("-s", "--skip_parallel", action="store_true", help="Skip the parallel execution prompt (force sequential)")
     args = parser.parse_args()
 
-    app = ConvertApp(args.directory, args.output_directory)
+    app = ConvertApp(directory=args.directory, output_directory=args.output_directory, parallel=args.parallel, skip_parallel=args.skip_parallel)
     app.convert_epub_to_azw3()
 
 
